@@ -18,7 +18,7 @@ module.exports = {
       throw new Error("Incorrect password");
     }
   },
-  createUser: async ({ user: { name, avatarUrl, password } }) => {
+  createUser: async ({ user: { name, avatarUrl, password } }, { wss }) => {
     const found = await User.find({ name });
     if (found.length) {
       throw new Error("User is already exists.");
@@ -46,7 +46,7 @@ module.exports = {
     }
     return User.find({ name: { $ne: user.sub } });
   },
-  createChat: async ({ chat: { members } }) => {
+  createChat: async ({ chat: { members } }, { wss }) => {
     try {
       const newChat = new Chat({ members });
       await newChat.save();
@@ -72,9 +72,10 @@ module.exports = {
         "members"
       );
       for (const chat of chats) {
-        const messages = await Message.find({ chatId: chat._id }).sort([
-          ["date", -1],
-        ]);
+        const messages = await Message.find({ chatId: chat._id });
+        messages.sort((a, b) => {
+          return new Date(b.date) - new Date(a.date);
+        });
         if (messages.length) {
           chat.lastMessage = messages[0];
         }
